@@ -110,7 +110,6 @@
       <label><input type="checkbox" class="kategorieCheckbox" value="Sonstiges" checked> Sonstiges</label>
     </div>
     <div id="spielernamen"></div>
-    <button onclick="spielerNamenErstellen()">Spielernamen generieren</button><br>
     <button onclick="spielStarten()">Spielen</button>
   </div>
 
@@ -192,25 +191,11 @@
       }
 
       // TODO: Spieler erstellen, Wörter verteilen, Karte anzeigen
-      alert(`Spiel startet mit ${spieleranzahl} Spielern, ${impostoranzahl} Impostor(s), und ${wortPool.length} Wörtern aus ${checkedCategories.join(", ")}`);
       // Für Demo: einfach zurück zum Menü
       // Hier kannst du deinen bisherigen Spielcode anpassen und integrieren
     }
 
     // Beispielhafte Funktion zum Generieren von Spielernamen (vereinfacht)
-    function spielerNamenErstellen() {
-      const spieleranzahl = parseInt(document.getElementById('spieleranzahl').value, 10);
-      const container = document.getElementById('spielernamen');
-      container.innerHTML = '';
-      for (let i = 1; i <= spieleranzahl; i++) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Name Spieler ' + i;
-        input.id = 'spieler' + i;
-        input.style.margin = '5px';
-        container.appendChild(input);
-        container.appendChild(document.createElement('br'));
-      }
     }
 
     function aufloesen() {
