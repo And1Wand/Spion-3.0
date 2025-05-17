@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spion Spiel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0; padding: 0;
+      /* Dunkler Grauton mit leichtem Verlauf von oben links (heller) nach unten rechts (dunkler) */
+      background: linear-gradient(135deg, #444444 0%, #222222 100%);
+      color: #eee;
+    }
+    .hidden { display: none; }
+    .screen {
+      padding: 20px;
+      text-align: center;
+    }
+    .card {
+      display: inline-block;
+      margin: 10px;
+      padding: 30px;
+      background: #3498db;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      width: 150px;
+      height: 100px;
+      user-select: none;
+    }
+    .card.revealed {
+      background: #2ecc71;
+      color: black;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    input[type="number"] {
+      padding: 5px;
+      font-size: 1rem;
+      margin: 5px;
+      width: 60px;
+      text-align: center;
+      border-radius: 5px;
+      border: none;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 8px 0 4px;
+      user-select: none;
+    }
+    #kategorienAuswahl {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px auto;
+      width: 250px;
+      background: #333;
+      text-align: left;
+      color: #eee;
+    }
+    #kategorienAuswahl label {
+      font-weight: normal;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    #kategorienAuswahl input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu" class="screen">
+    <h1>Spion Spiel</h1>
+    <label>Spieleranzahl:
+      <input type="number" id="spieleranzahl" value="4" min="3" max="20" />
+    </label>
+    <label>Impostoranzahl:
+      <input type="number" id="impostoranzahl" value="1" min="1" />
+    </label>
+    <label>Kategorien auswählen:</label>
+    <div id="kategorienAuswahl">
+      <label><input type="checkbox" class="kategorieCheckbox" value="Rund um die Welt" checked> Rund um die Welt</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Unterhaltung" checked> Unterhaltung</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Alltag" checked> Alltag</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Tiere & Natur" checked> Tiere & Natur</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Sport & Freizeit" checked> Sport & Freizeit</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Wissen & Schule" checked> Wissen & Schule</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Feste & Feiern" checked> Feste & Feiern</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Deutsche Begriffe" checked> Deutsche Begriffe</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Stars & Promis" checked> Stars & Promis</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Technologie & Wissenschaft" checked> Technologie & Wissenschaft</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Geographie & Geschichte" checked> Geographie & Geschichte</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Filme & Serien" checked> Filme & Serien</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Essen & Trinken" checked> Essen & Trinken</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Musik & Kunst" checked> Musik & Kunst</label>
+      <label><input type="checkbox" class="kategorieCheckbox" value="Sonstiges" checked> Sonstiges</label>
+    </div>
+    <div id="spielernamen"></div>
+    <button onclick="spielerNamenErstellen()">Spielernamen generieren</button><br>
+    <button onclick="spielStarten()">Spielen</button>
+  </div>
+
+  <div id="spiel" class="screen hidden">
+    <h2>Wort anzeigen</h2>
+    <div id="karten"></div><br>
+    <button onclick="aufloesen()">Auflösen</button>
+  </div>
+
+  <div id="ergebnis" class="screen hidden">
+    <h2>Impostor war(en):</h2>
+    <p id="impostor-namen"></p>
+    <button onclick="spielStarten()">Erneut spielen</button>
+    <button onclick="zurueckZumMenue()">Menü</button>
+  </div>
+
+  <script>
+    // Beispielhafte Kategorien-Wortlisten (bitte mit deinen kompletten Listen ersetzen)
+    const rundUmDieWelt = ["Europa", "Afrika", "Asien", "Amerika", "Australien"];
+    const unterhaltung = ["Kino", "Theater", "Konzert", "Spiel", "Fernsehen"];
+    const alltag = ["Arbeit", "Haus", "Auto", "Einkauf", "Schule"];
+    const tiereUndNatur = ["Hund", "Katze", "Baum", "Blume", "Vogel"];
+    const sportUndFreizeit = ["Fußball", "Tennis", "Schwimmen", "Radfahren", "Wandern"];
+    const wissenUndSchule = ["Mathematik", "Geschichte", "Physik", "Biologie", "Chemie"];
+    const festeUndFeiern = ["Weihnachten", "Geburtstag", "Karneval", "Ostern", "Hochzeit"];
+    const deutscheBegriffe = ["Haus", "Auto", "Straße", "Baum", "Fenster"];
+    const starsUndPromis = ["Brad Pitt", "Angela Merkel", "Beyoncé", "Elon Musk", "Messi"];
+    const technologieUndWissenschaft = ["Computer", "Roboter", "Atom", "Quanten", "Internet"];
+    const geographieUndGeschichte = ["Deutschland", "Berlin", "Mittelalter", "Renaissance", "Revolution"];
+    const filmeUndSerien = ["Matrix", "Game of Thrones", "Star Wars", "Friends", "Breaking Bad"];
+    const essenUndTrinken = ["Pizza", "Bier", "Wasser", "Salat", "Kaffee"];
+    const musikUndKunst = ["Klavier", "Gitarre", "Malerei", "Skulptur", "Tanz"];
+    const sonstiges = [
+      "Pollen", "Milchstraße", "Vulkan", "Regenbogen", "Sternbild", "Quanten", "Wind", "Komet", "Polarlicht", "Nebel",
+      "Dunst", "Molekül", "Planet", "Atom", "Magnet", "Zeit", "Energie", "Welle", "Echo", "Laser",
+      "Sand", "Wüste", "Ozean", "Gezeiten", "Insel", "Krater", "Fossil", "Schall", "Dunkelheit", "Licht",
+      "Schatten", "Temperatur", "Bewegung", "Spannung", "Farbe", "Gefühl", "Traum", "Geschichte", "Sprache", "Erinnerung",
+      "Wunsch", "Idee", "Mythos", "Legende", "Kultur", "Tradition", "Chaos", "Ordnung", "Puzzle", "Geist"
+    ];
+
+    // Beispielhafte Funktion zum Starten des Spiels (ausgewählte Kategorien kombinieren)
+    function spielStarten() {
+      const checkedCategories = [...document.querySelectorAll('.kategorieCheckbox:checked')].map(cb => cb.value);
+      let wortPool = [];
+
+      checkedCategories.forEach(kat => {
+        switch (kat) {
+          case "Rund um die Welt": wortPool = wortPool.concat(rundUmDieWelt); break;
+          case "Unterhaltung": wortPool = wortPool.concat(unterhaltung); break;
+          case "Alltag": wortPool = wortPool.concat(alltag); break;
+          case "Tiere & Natur": wortPool = wortPool.concat(tiereUndNatur); break;
+          case "Sport & Freizeit": wortPool = wortPool.concat(sportUndFreizeit); break;
+          case "Wissen & Schule": wortPool = wortPool.concat(wissenUndSchule); break;
+          case "Feste & Feiern": wortPool = wortPool.concat(festeUndFeiern); break;
+          case "Deutsche Begriffe": wortPool = wortPool.concat(deutscheBegriffe); break;
+          case "Stars & Promis": wortPool = wortPool.concat(starsUndPromis); break;
+          case "Technologie & Wissenschaft": wortPool = wortPool.concat(technologieUndWissenschaft); break;
+          case "Geographie & Geschichte": wortPool = wortPool.concat(geographieUndGeschichte); break;
+          case "Filme & Serien": wortPool = wortPool.concat(filmeUndSerien); break;
+          case "Essen & Trinken": wortPool = wortPool.concat(essenUndTrinken); break;
+          case "Musik & Kunst": wortPool = wortPool.concat(musikUndKunst); break;
+          case "Sonstiges": wortPool = wortPool.concat(sonstiges); break;
+        }
+      });
+
+      if (wortPool.length === 0) {
+        alert("Bitte wähle mindestens eine Kategorie aus.");
+        return;
+      }
+
+      // Restliche Logik zum Spielstart hier ...
+      // Beispiel: Spieleranzahl und Impostoranzahl auslesen
+      const spieleranzahl = parseInt(document.getElementById('spieleranzahl').value, 10);
+      const impostoranzahl = parseInt(document.getElementById('impostoranzahl').value, 10);
+
+      if (impostoranzahl >= spieleranzahl) {
+        alert("Die Anzahl der Impostors muss kleiner als die Spieleranzahl sein.");
+        return;
+      }
+
+      // TODO: Spieler erstellen, Wörter verteilen, Karte anzeigen
+      alert(`Spiel startet mit ${spieleranzahl} Spielern, ${impostoranzahl} Impostor(s), und ${wortPool.length} Wörtern aus ${checkedCategories.join(", ")}`);
+      // Für Demo: einfach zurück zum Menü
+      // Hier kannst du deinen bisherigen Spielcode anpassen und integrieren
+    }
+
+    // Beispielhafte Funktion zum Generieren von Spielernamen (vereinfacht)
+    function spielerNamenErstellen() {
+      const spieleranzahl = parseInt(document.getElementById('spieleranzahl').value, 10);
+      const container = document.getElementById('spielernamen');
+      container.innerHTML = '';
+      for (let i = 1; i <= spieleranzahl; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Name Spieler ' + i;
+        input.id = 'spieler' + i;
+        input.style.margin = '5px';
+        container.appendChild(input);
+        container.appendChild(document.createElement('br'));
+      }
+    }
+
+    function aufloesen() {
+      alert("Auflösung wird hier noch implementiert.");
+    }
+
+    function zurueckZumMenue() {
+      document.getElementById('ergebnis').classList.add('hidden');
+      document.getElementById('menu').classList.remove('hidden');
+    }
+
+    // Automatisch Spielernamen erstellen beim Laden (optional)
+    spielerNamenErstellen();
+
+  </script>
+</body>
+</html>
